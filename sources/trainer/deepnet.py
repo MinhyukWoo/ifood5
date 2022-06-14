@@ -1,32 +1,26 @@
-from sklearn.svm import SVC
-from numpy import ndarray
-from ..ifood.convert import img2ndarray
-from ..ifood.dao import IfoodDataDao
-import random
-import numpy as np
+from ..dataset.dataset import Dataset
 
 
 class Deepnet:
-    def __init__(self, batch_size, start_image_size, epoch, random_state=0):
-        self.random_state = random_state
-        self.start_image_size = start_image_size
-        self.batch_size = batch_size
-        self.epoch = epoch
+    def fit(self,
+            train_set: Dataset, epoch: int,
+            validation_set: Dataset | None = None
+            ) -> list[float] | tuple[list[float], list[float]]:
+        train_scores = [0.0 for _ in range(epoch)]
+        val_scores = [0.0 for _ in range(epoch)]
+        for i in range(epoch):
+            for train_data, train_label in train_set:
+                self._fit(train_data, train_label)
+            train_scores.insert(i, self.score(train_set))
+            if validation_set is not None:
+                val_scores.insert(i, self.score(validation_set))
+        if validation_set is None:
+            return train_scores
+        else:
+            return train_scores, val_scores
 
-    def fit(self, train_dao: IfoodDataDao, label: ndarray):
-        random.seed(self.random_state)
-        train_size = train_dao.get_index_size()
-        train_indices = [i for i in range(train_size)]
-        random.shuffle(train_indices)
-        for _ in range(self.epoch):
-            for start in range(0, train_size, self.batch_size):
-                batch_indices = train_indices[start: start + self.batch_size]
-                batch_img_arrays = [
-                    img2ndarray(train_dao.get_image(i), self.start_image_size) for i in
-                    batch_indices
-                ]
-                batch_img_arrays = np.array(batch_img_arrays)
-                self._fit(batch_img_arrays, label)
+    def score(self, data_set) -> float:
+        pass
 
-    def _fit(self, X, y):
+    def _fit(self, x, y):
         pass
